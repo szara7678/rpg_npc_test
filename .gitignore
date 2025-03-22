@@ -1,0 +1,6 @@
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+
+# Ignore .env files (or other files where secrets may reside)
+.env
