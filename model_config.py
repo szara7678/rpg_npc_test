@@ -16,6 +16,7 @@ class ModelType(Enum):
     LOCAL = "local"
     CUSTOM = "custom"
     GEMMA = "gemma"
+    LLAMA = "llama"
 
 # Default model configurations
 MODEL_CONFIGS = {
@@ -65,18 +66,8 @@ MODEL_CONFIGS = {
     },
 
     ModelType.GEMMA: {
-        "1B": {
-            "model_id": "gemma3-1b-it",
-            "requires_auth": False,
-            "token_limit": 2048,
-            "recommended_for": ["background_npcs", "simple_responses"]
-        },
-        "4B": {
-            "model_id": "gemma3-4b-it",
-            "requires_auth": False,
-            "token_limit": 2048,
-            "recommended_for": ["background_npcs", "simple_responses"]
-        }
+        "1B": "google/gemma-3-1b-it",
+        "4B": "google/gemma-3-4b-it"
     },
     
     ModelType.LOCAL: {
@@ -156,27 +147,27 @@ MEMORY_PRESETS = {
 }
 
 # Function to get model configuration
-def get_model_config(model_type=ModelType.LLAMA3, model_size="3B"):
+def get_model_config(model_type, size):
     """
     Get model configuration based on type and size
     
     Args:
         model_type (ModelType): The model type to use
-        model_size (str): Size variant of the model
+        size (str): Size variant of the model
         
     Returns:
-        dict: Model configuration
+        str: Model ID
     """
     if model_type not in MODEL_CONFIGS:
         raise ValueError(f"Unsupported model type: {model_type}")
         
-    model_variants = MODEL_CONFIGS[model_type]
+    model_configs = MODEL_CONFIGS[model_type]
     
-    if model_size not in model_variants:
-        available_sizes = list(model_variants.keys())
-        raise ValueError(f"Unsupported model size: {model_size}. Available sizes: {available_sizes}")
+    if size not in model_configs:
+        available_sizes = list(model_configs.keys())
+        raise ValueError(f"Unsupported model size: {size}. Available sizes: {available_sizes}")
         
-    return model_variants[model_size]
+    return model_configs[size]
 
 # Function to get optimization settings
 def get_optimization_settings(preset="mid_range_gpu"):
@@ -244,8 +235,21 @@ def create_custom_model_config(model_id_or_path, is_local=False, requires_auth=F
 login(token="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")
 
 # 원하는 모델 타입과 크기 선택
-model_config = get_model_config(ModelType.GEMMA, "1B")
-model_id = model_config["model_id"]
+model_type = ModelType.GEMMA
+size = "1B"  # 사용 가능한 모델 크기로 변경
+
+try:
+    # 모델 설정 가져오기
+    model_config = MODEL_CONFIGS[model_type][size]
+    if isinstance(model_config, dict) and "model_id" in model_config:
+        model_id = model_config["model_id"]
+    else:
+        model_id = model_config  # 문자열로 직접 모델 ID가 있는 경우
+    
+    print(f"모델 설정: {model_id}")
+except Exception as e:
+    print(f"모델 설정 로드 오류: {e}")
+    model_id = "google/gemma-3-1b-it"  # 올바른 기본값으로 설정
 
 # 모델 로드
 tokenizer = AutoTokenizer.from_pretrained(model_id)
